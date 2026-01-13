@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex Lot Calculator - Excel Style</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>">
+<style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #217346;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #217346;
+            padding-bottom: 10px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            background: #217346;
+            color: white;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 4px 4px 0 0;
+            font-size: 14px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 4px 4px;
+            font-size: 16px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 0 0 4px 4px;
+            font-size: 16px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #217346;
+        }
+        .result-section {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .result-section h2 {
+            color: #217346;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #c8e6c9;
+            flex-wrap: wrap;
+        }
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            font-weight: bold;
+            color: #1b5e20;
+            font-size: 14px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #217346;
+            text-align: right;
+        }
+        .lots-result {
+            font-size: 28px;
+            color: #1b5e20;
+        }
+        .highlight-result {
+            background: #fff9c4;
+            border-left: 4px solid #fbc02d;
+        }
+        button {
+            background: #217346;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #1b5e20;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            color: #856404;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+        .error-banner {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin-top: 20px;
+            color: #721c24;
+            font-size: 14px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            .container {
+                padding: 30px;
+            }
+            h1 {
+                font-size: 28px;
+            }
+            .result-label {
+                font-size: 15px;
+            }
+            .result-value {
+                font-size: 20px;
+            }
+            .lots-result {
+                font-size: 32px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            body {
+                padding: 40px 20px;
+            }
+            h1 {
+                font-size: 32px;
+                margin-bottom: 30px;
+            }
+            .form-group {
+                margin-bottom: 0;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            button {
+                width: auto;
+                padding: 12px 40px;
+            }
+        }
+    </style>
+
+    <meta name="theme-color" content="#217346">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Forex Lots">
+
+</head>
+<body>
+    <div class="container">
+        <h1>📊 CALCOLATORE LOTTI FOREX</h1>
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">COPPIA FOREX</label>
+                <select id="pair" class="form-input">
+                    <option value="EURUSD">EURUSD</option>
+                    <option value="GBPUSD">GBPUSD</option>
+                    <option value="USDJPY">USDJPY</option>
+                    <option value="USDCHF">USDCHF</option>
+                    <option value="AUDUSD">AUDUSD</option>
+                    <option value="USDCAD">USDCAD</option>
+                    <option value="NZDUSD">NZDUSD</option>
+                    <option value="EURJPY">EURJPY</option>
+                    <option value="GBPJPY" selected>GBPJPY</option>
+                    <option value="EURGBP">EURGBP</option>
+                    <option value="EURAUD">EURAUD</option>
+                    <option value="EURCHF">EURCHF</option>
+                    <option value="AUDJPY">AUDJPY</option>
+                    <option value="GBPAUD">GBPAUD</option>
+                    <option value="GBPCHF">GBPCHF</option>
+                    <option value="CHFJPY">CHFJPY</option>
+                    <option value="CADJPY">CADJPY</option>
+                    <option value="NZDJPY">NZDJPY</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">POSIZIONE</label>
+                <select id="position" class="form-input">
+                    <option value="LONG">LONG</option>
+                    <option value="SHORT">SHORT</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">TIPO POSIZIONE</label>
+                <select id="positionType" class="form-input">
+                    <option value="BREAKIN">BREAK IN</option>
+                    <option value="BREAKOUT">BREAK OUT</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="atrGroup" style="display:none;">
+                <label class="form-label">ATR (20)</label>
+                <input type="number" id="atr" class="form-input" value="" step="0.01" placeholder="Es: 0.65">
+            </div>
+
+            <div class="form-group" id="timeframeGroup" style="display:none;">
+                <label class="form-label">ARCO TEMPORALE</label>
+                <select id="timeframe" class="form-input">
+                    <option value="INTRADAY">INTRADAY</option>
+                    <option value="MULTIDAY">MULTIDAY</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">CAPITALE (€)</label>
+                <input type="number" id="capital" class="form-input" value="158000" step="1000">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">LEVA</label>
+                <select id="leverage" class="form-input">
+                    <option value="10">1:10</option>
+                    <option value="20">1:20</option>
+                    <option value="30" selected>1:30</option>
+                    <option value="50">1:50</option>
+                    <option value="100">1:100</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">RISCHIO (%)</label>
+                <input type="number" id="risk" class="form-input" value="2" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">PREZZO INGRESSO</label>
+                <input type="number" id="entry" class="form-input" value="212.15" step="0.00001">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="masterCandleLabel">MINIMO CANDELA MASTER</label>
+                <input type="number" id="masterCandle" class="form-input" value="211.80" step="0.00001">
+            </div>
+
+            <div class="form-group" id="trendlineGroup" style="display:none;">
+                <label class="form-label" id="trendlineLabel">VALORE TRENDLINE MASTER</label>
+                <input type="number" id="trendline" class="form-input" value="" step="0.00001" placeholder="Es: 211.70">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">PIPS STOP LOSS</label>
+                <input type="number" id="stopLossPips" class="form-input" value="" step="0.1" placeholder="Auto-calcolo">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">TARGET 1</label>
+                <input type="number" id="target1" class="form-input" value="212.90" step="0.00001">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">TARGET 2</label>
+                <input type="number" id="target2" class="form-input" value="" step="0.00001" placeholder="Opzionale">
+            </div>
+        </div>
+
+        <div class="result-section" id="results">
+            <h2>RISULTATI</h2>
+            
+            <div class="result-row highlight-result" id="stopLossSuggestedRow" style="display:none;">
+                <span class="result-label">STOP LOSS SUGGERITO:</span>
+                <span class="result-value" id="stopLossSuggested">-</span>
+            </div>
+            
+            <div class="result-row">
+                <span class="result-label">LOTTI DA TRADARE:</span>
+                <span class="result-value lots-result" id="lotsResult">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Margine Richiesto (€):</span>
+                <span class="result-value" id="marginRequired">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Importo a Rischio (€):</span>
+                <span class="result-value" id="riskAmount">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Stop Loss (pip):</span>
+                <span class="result-value" id="stopPips">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Target 1 (pip):</span>
+                <span class="result-value" id="target1Pips">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Rapporto R:R Target 1:</span>
+                <span class="result-value" id="rr1">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Profitto Potenziale T1 (€):</span>
+                <span class="result-value" id="profit1">-</span>
+            </div>
+            <div class="result-row" id="lotsT1Row" style="display:none;">
+                <span class="result-label">Lotti chiusi a T1:</span>
+                <span class="result-value" id="lotsT1">-</span>
+            </div>
+            <div class="result-row" id="t2row" style="display:none;">
+                <span class="result-label">Target 2 (pip):</span>
+                <span class="result-value" id="target2Pips">-</span>
+            </div>
+            <div class="result-row" id="rr2row" style="display:none;">
+                <span class="result-label">Rapporto R:R Target 2:</span>
+                <span class="result-value" id="rr2">-</span>
+            </div>
+            <div class="result-row" id="rrAvgRow" style="display:none;">
+                <span class="result-label">R:R MEDIO (T1 + T2):</span>
+                <span class="result-value" id="rrAvg">-</span>
+            </div>
+            <div class="result-row" id="profit2row" style="display:none;">
+                <span class="result-label">Profitto Potenziale T2 (€):</span>
+                <span class="result-value" id="profit2">-</span>
+            </div>
+            <div class="result-row" id="lotsT2Row" style="display:none;">
+                <span class="result-label">Lotti chiusi a T2:</span>
+                <span class="result-value" id="lotsT2">-</span>
+            </div>
+            <div class="result-row highlight-result" id="totalProfitRow" style="display:none;">
+                <span class="result-label">PROFITTO TOTALE (T1 + T2):</span>
+                <span class="result-value" id="totalProfit">-</span>
+            </div>
+        </div>
+
+        <div class="error-banner" id="errorBanner">
+            ⚠️ ATTENZIONE: Controlla i valori inseriti! I prezzi di ingresso e target non rispettano la logica della strategia selezionata.
+        </div>
+
+        <button onclick="downloadExcel()">📥 SCARICA EXCEL</button>
+
+        <div class="note">
+            <strong>Nota:</strong> I valori dei pip sono approssimativi e basati su tassi di cambio medi. 
+            <br><strong>BREAK IN:</strong> Lo stop loss suggerito è il valore minimo/massimo tra candela master e trendline.
+            <br><strong>BREAK OUT:</strong> Lo stop loss è calcolato come il valore tra (Entry - ATR × moltiplicatore) e il minimo/massimo candela master.
+            <br><strong>CON DUE TARGET:</strong> Il profitto è calcolato chiudendo metà posizione (50% lotti) a T1 e l'altra metà a T2.
+        </div>
+    </div>
+
+    <script>
+        function getPipValue(pair) {
+            if (pair.endsWith('JPY')) {
+                return 6.25;
+            } else if (pair.startsWith('EUR')) {
+                return 10;
+            } else if (pair.startsWith('GBP')) {
+                return 11.5;
+            } else if (pair.endsWith('USD')) {
+                return 9.2;
+            }
+            return 10;
+        }
+
+        function updateUI() {
+            const positionType = document.getElementById('positionType').value;
+            const position = document.getElementById('position').value;
+            
+            // Mostra/nascondi campi basati su tipo posizione
+            if (positionType === 'BREAKOUT') {
+                document.getElementById('atrGroup').style.display = 'block';
+                document.getElementById('timeframeGroup').style.display = 'block';
+                document.getElementById('trendlineGroup').style.display = 'none';
+            } else {
+                // BREAK IN
+                document.getElementById('atrGroup').style.display = 'none';
+                document.getElementById('timeframeGroup').style.display = 'none';
+                document.getElementById('trendlineGroup').style.display = 'block';
+            }
+            
+            // Cambia label candela master e trendline
+            const candleLabel = document.getElementById('masterCandleLabel');
+            const trendlineLabel = document.getElementById('trendlineLabel');
+            
+            if (position === 'LONG') {
+                candleLabel.textContent = 'MINIMO CANDELA MASTER';
+                trendlineLabel.textContent = 'VALORE TRENDLINE MASTER (minimo)';
+            } else {
+                candleLabel.textContent = 'MASSIMO CANDELA MASTER';
+                trendlineLabel.textContent = 'VALORE TRENDLINE MASTER (massimo)';
+            }
+        }
+
+        function calculate() {
+            const pair = document.getElementById('pair').value;
+            const position = document.getElementById('position').value;
+            const positionType = document.getElementById('positionType').value;
+            const capital = parseFloat(document.getElementById('capital').value);
+            const leverage = parseFloat(document.getElementById('leverage').value);
+            const risk = parseFloat(document.getElementById('risk').value);
+            const entry = parseFloat(document.getElementById('entry').value);
+            const masterCandle = parseFloat(document.getElementById('masterCandle').value);
+            const trendline = parseFloat(document.getElementById('trendline').value);
+            const atr = parseFloat(document.getElementById('atr').value);
+            const timeframe = document.getElementById('timeframe').value;
+            const stopLossPipsInput = parseFloat(document.getElementById('stopLossPips').value);
+            const target1 = parseFloat(document.getElementById('target1').value);
+            const target2 = parseFloat(document.getElementById('target2').value);
+
+            if (!capital || !risk || !entry || !masterCandle) {
+                return;
+            }
+
+            let stopLossPrice;
+            let validationError = false;
+            
+            // Calcolo dello stop loss in base al tipo di posizione
+            if (positionType === 'BREAKOUT' && atr) {
+                // BREAK OUT
+                const atrMultiplier = timeframe === 'INTRADAY' ? 1.5 : 1.0;
+                
+                let atrStop;
+                if (position === 'LONG') {
+                    atrStop = entry - (atr * atrMultiplier);
+                    stopLossPrice = Math.max(atrStop, masterCandle);
+                    
+                    // Validazione BREAK OUT LONG: entry e target devono essere > stop loss
+                    if (entry <= stopLossPrice || (target1 && target1 <= stopLossPrice) || (target2 && target2 <= stopLossPrice)) {
+                        validationError = true;
+                    }
+                } else {
+                    atrStop = entry + (atr * atrMultiplier);
+                    stopLossPrice = Math.min(atrStop, masterCandle);
+                    
+                    // Validazione BREAK OUT SHORT: entry e target devono essere < stop loss
+                    if (entry >= stopLossPrice || (target1 && target1 >= stopLossPrice) || (target2 && target2 >= stopLossPrice)) {
+                        validationError = true;
+                    }
+                }
+                
+                document.getElementById('stopLossSuggestedRow').style.display = 'flex';
+                document.getElementById('stopLossSuggested').textContent = stopLossPrice.toFixed(5);
+            } else if (positionType === 'BREAKIN') {
+                // BREAK IN
+                if (trendline) {
+                    // Con trendline: usa il valore minimo/massimo tra candela master e trendline
+                    if (position === 'LONG') {
+                        stopLossPrice = Math.min(masterCandle, trendline);
+                        
+                        // Validazione BREAK IN LONG: entry e target devono essere > stop loss suggerito
+                        if (entry <= stopLossPrice || (target1 && target1 <= stopLossPrice) || (target2 && target2 <= stopLossPrice)) {
+                            validationError = true;
+                        }
+                    } else {
+                        stopLossPrice = Math.max(masterCandle, trendline);
+                        
+                        // Validazione BREAK IN SHORT: entry e target devono essere < stop loss suggerito
+                        if (entry >= stopLossPrice || (target1 && target1 >= stopLossPrice) || (target2 && target2 >= stopLossPrice)) {
+                            validationError = true;
+                        }
+                    }
+                } else {
+                    // Senza trendline: usa solo la candela master
+                    stopLossPrice = masterCandle;
+                    
+                    if (position === 'LONG') {
+                        if (entry <= stopLossPrice || (target1 && target1 <= stopLossPrice) || (target2 && target2 <= stopLossPrice)) {
+                            validationError = true;
+                        }
+                    } else {
+                        if (entry >= stopLossPrice || (target1 && target1 >= stopLossPrice) || (target2 && target2 >= stopLossPrice)) {
+                            validationError = true;
+                        }
+                    }
+                }
+                
+                document.getElementById('stopLossSuggestedRow').style.display = 'flex';
+                document.getElementById('stopLossSuggested').textContent = stopLossPrice.toFixed(5);
+            } else {
+                // Fallback: usa candela master
+                stopLossPrice = masterCandle;
+                document.getElementById('stopLossSuggestedRow').style.display = 'none';
+            }
+
+            // Mostra/nascondi banner di errore
+            if (validationError) {
+                document.getElementById('errorBanner').style.display = 'block';
+                // Nascondi i risultati se c'è un errore
+                document.getElementById('results').style.opacity = '0.5';
+                return;
+            } else {
+                document.getElementById('errorBanner').style.display = 'none';
+                document.getElementById('results').style.opacity = '1';
+            }
+
+            const riskAmount = (capital * risk) / 100;
+            
+            let stopPips;
+            if (stopLossPipsInput) {
+                stopPips = stopLossPipsInput;
+            } else {
+                if (pair.endsWith('JPY')) {
+                    stopPips = Math.abs(entry - stopLossPrice) * 100;
+                } else {
+                    stopPips = Math.abs(entry - stopLossPrice) * 10000;
+                }
+            }
+
+            const pipValue = getPipValue(pair);
+            const lots = riskAmount / (stopPips * pipValue);
+
+            let marginRequired;
+            if (pair.endsWith('JPY')) {
+                marginRequired = (lots * 100000 * entry / 160) / leverage;
+            } else if (pair.startsWith('EUR')) {
+                marginRequired = (lots * 100000) / leverage;
+            } else if (pair.startsWith('GBP')) {
+                marginRequired = (lots * 100000 * 1.15) / leverage;
+            } else {
+                marginRequired = (lots * 100000 * 0.92) / leverage;
+            }
+
+            document.getElementById('lotsResult').textContent = lots.toFixed(2);
+            document.getElementById('marginRequired').textContent = '€' + marginRequired.toFixed(2);
+            document.getElementById('riskAmount').textContent = '€' + riskAmount.toFixed(2);
+            document.getElementById('stopPips').textContent = stopPips.toFixed(1);
+
+            if (target1) {
+                let target1Pips;
+                if (pair.endsWith('JPY')) {
+                    target1Pips = Math.abs(target1 - entry) * 100;
+                } else {
+                    target1Pips = Math.abs(target1 - entry) * 10000;
+                }
+                const rr1 = target1Pips / stopPips;
+                
+                // Se c'è anche T2, usa metà lotti per T1
+                const lotsForT1 = target2 ? lots / 2 : lots;
+                const profit1 = target1Pips * pipValue * lotsForT1;
+
+                document.getElementById('target1Pips').textContent = target1Pips.toFixed(1);
+                document.getElementById('rr1').textContent = '1:' + rr1.toFixed(2);
+                document.getElementById('profit1').textContent = '€' + profit1.toFixed(2);
+            }
+
+            if (target2) {
+                let target2Pips;
+                if (pair.endsWith('JPY')) {
+                    target2Pips = Math.abs(target2 - entry) * 100;
+                } else {
+                    target2Pips = Math.abs(target2 - entry) * 10000;
+                }
+                const rr2 = target2Pips / stopPips;
+                
+                // Usa metà lotti per T2
+                const lotsForT2 = lots / 2;
+                const profit2 = target2Pips * pipValue * lotsForT2;
+
+                document.getElementById('target2Pips').textContent = target2Pips.toFixed(1);
+                document.getElementById('rr2').textContent = '1:' + rr2.toFixed(2);
+                document.getElementById('profit2').textContent = '€' + profit2.toFixed(2);
+                document.getElementById('lotsT2').textContent = lotsForT2.toFixed(2);
+                
+                // Calcola R:R medio e profitto totale
+                if (target1) {
+                    let target1Pips;
+                    if (pair.endsWith('JPY')) {
+                        target1Pips = Math.abs(target1 - entry) * 100;
+                    } else {
+                        target1Pips = Math.abs(target1 - entry) * 10000;
+                    }
+                    const rr1 = target1Pips / stopPips;
+                    const rrAvg = (rr1 + rr2) / 2;
+                    
+                    const lotsForT1 = lots / 2;
+                    const profit1 = target1Pips * pipValue * lotsForT1;
+                    const totalProfit = profit1 + profit2;
+                    
+                    document.getElementById('rrAvg').textContent = '1:' + rrAvg.toFixed(2);
+                    document.getElementById('lotsT1').textContent = lotsForT1.toFixed(2);
+                    document.getElementById('totalProfit').textContent = '€' + totalProfit.toFixed(2);
+                    
+                    document.getElementById('rrAvgRow').style.display = 'flex';
+                    document.getElementById('lotsT1Row').style.display = 'flex';
+                    document.getElementById('lotsT2Row').style.display = 'flex';
+                    document.getElementById('totalProfitRow').style.display = 'flex';
+                }
+                
+                document.getElementById('t2row').style.display = 'flex';
+                document.getElementById('rr2row').style.display = 'flex';
+                document.getElementById('profit2row').style.display = 'flex';
+            } else {
+                document.getElementById('t2row').style.display = 'none';
+                document.getElementById('rr2row').style.display = 'none';
+                document.getElementById('profit2row').style.display = 'none';
+                document.getElementById('rrAvgRow').style.display = 'none';
+                document.getElementById('lotsT1Row').style.display = 'none';
+                document.getElementById('lotsT2Row').style.display = 'none';
+                document.getElementById('totalProfitRow').style.display = 'none';
+            }
+        }
+
+        function downloadExcel() {
+            const pair = document.getElementById('pair').value;
+            const position = document.getElementById('position').value;
+            const positionType = document.getElementById('positionType').value;
+            const capital = document.getElementById('capital').value;
+            const leverage = document.getElementById('leverage').value;
+            const risk = document.getElementById('risk').value;
+            const entry = document.getElementById('entry').value;
+            const masterCandle = document.getElementById('masterCandle').value;
+            const trendline = document.getElementById('trendline').value;
+            const atr = document.getElementById('atr').value;
+            const timeframe = document.getElementById('timeframe').value;
+            const stopLossPips = document.getElementById('stopLossPips').value;
+            const target1 = document.getElementById('target1').value;
+            const target2 = document.getElementById('target2').value;
+
+            const data = [
+                ['CALCOLATORE LOTTI FOREX', '', ''],
+                ['', '', ''],
+                ['DATI INPUT', '', ''],
+                ['Coppia Forex', pair, ''],
+                ['Posizione', position, ''],
+                ['Tipo Posizione', positionType, ''],
+                ['ATR (20)', atr, ''],
+                ['Arco Temporale', timeframe, ''],
+                ['Capitale (€)', capital, ''],
+                ['Leva', '1:' + leverage, ''],
+                ['Rischio (%)', risk, ''],
+                ['Prezzo Ingresso', entry, ''],
+                ['Min/Max Candela Master', masterCandle, ''],
+                ['Valore Trendline Master', trendline, ''],
+                ['Pips Stop Loss', stopLossPips, ''],
+                ['Target 1', target1, ''],
+                ['Target 2', target2, ''],
+                ['', '', ''],
+                ['RISULTATI', '', ''],
+                ['Stop Loss Suggerito', document.getElementById('stopLossSuggested').textContent, ''],
+                ['Lotti da Tradare', document.getElementById('lotsResult').textContent, ''],
+                ['Margine Richiesto', document.getElementById('marginRequired').textContent, ''],
+                ['Importo a Rischio', document.getElementById('riskAmount').textContent, ''],
+                ['Stop Loss (pip)', document.getElementById('stopPips').textContent, ''],
+                ['Target 1 (pip)', document.getElementById('target1Pips').textContent, ''],
+                ['R:R Target 1', document.getElementById('rr1').textContent, ''],
+                ['Profitto Potenziale T1', document.getElementById('profit1').textContent, ''],
+                ['Target 2 (pip)', document.getElementById('target2Pips').textContent, ''],
+                ['R:R Target 2', document.getElementById('rr2').textContent, ''],
+                ['R:R Medio', document.getElementById('rrAvg').textContent, ''],
+                ['Profitto Potenziale T2', document.getElementById('profit2').textContent, '']
+            ];
+
+            // Offline export: SpreadsheetML (Excel-compatible .xls) without external libraries
+            const xml = spreadsheetMLFromAOA(data, 'Forex Calculator');
+            const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Calcolatore_Lotti_Forex.xls';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+        document.getElementById('positionType').addEventListener('change', function() {
+            updateUI();
+            calculate();
+        });
+
+        document.getElementById('position').addEventListener('change', function() {
+            updateUI();
+            calculate();
+        });
+
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', calculate);
+        });
+
+        updateUI();
+        calculate();
+    </script>
+
+    <script>
+      // PWA: Service Worker registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(console.error);
+        });
+      }
+    
+
+// ===== Offline Excel export helpers (SpreadsheetML 2003) =====
+function escapeXml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+function spreadsheetMLFromAOA(aoa, sheetName) {
+    const name = sheetName || 'Sheet1';
+    const escName = escapeXml(name);
+
+    const header = aoa.length ? (aoa[0] || []) : [];
+    const body = aoa.length > 1 ? aoa.slice(1) : [];
+
+    const headerRow = header.length
+        ? `<Row>` + header.map(cell =>
+            `<Cell ss:StyleID="sHeader"><Data ss:Type="String">${escapeXml(cell ?? '')}</Data></Cell>`
+          ).join('') + `</Row>`
+        : '';
+
+    const bodyRows = body.map(r =>
+        `<Row>` + (r || []).map(cell =>
+            `<Cell><Data ss:Type="String">${escapeXml(cell ?? '')}</Data></Cell>`
+        ).join('') + `</Row>`
+    ).join('');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<?mso-application progid="Excel.Sheet"?>\n` +
+        `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n` +
+        ` xmlns:o="urn:schemas-microsoft-com:office:office"\n` +
+        ` xmlns:x="urn:schemas-microsoft-com:office:excel"\n` +
+        ` xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"\n` +
+        ` xmlns:html="http://www.w3.org/TR/REC-html40">\n` +
+        ` <Styles>\n` +
+        `  <Style ss:ID="sHeader"><Font ss:Bold="1"/></Style>\n` +
+        ` </Styles>\n` +
+        ` <Worksheet ss:Name="${escName}">\n` +
+        `  <Table>\n` +
+        headerRow + bodyRows +
+        `  </Table>\n` +
+        ` </Worksheet>\n` +
+        `</Workbook>`;
+}
+// ============================================================
+
+</script>
+
+</body>
+</html>
