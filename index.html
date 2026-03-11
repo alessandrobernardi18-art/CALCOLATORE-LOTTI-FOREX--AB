@@ -235,26 +235,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">TIPO POSIZIONE</label>
-                <select id="positionType" class="form-input">
-                    <option value="BREAKIN">BREAK IN</option>
-                    <option value="BREAKOUT">BREAK OUT</option>
-                </select>
-            </div>
 
-            <div class="form-group" id="atrGroup" style="display:none;">
-                <label class="form-label">ATR (20)</label>
-                <input type="number" id="atr" class="form-input" value="" step="0.01" placeholder="Es: 0.65">
-            </div>
-
-            <div class="form-group" id="timeframeGroup" style="display:none;">
-                <label class="form-label">ARCO TEMPORALE</label>
-                <select id="timeframe" class="form-input">
-                    <option value="INTRADAY">INTRADAY</option>
-                    <option value="MULTIDAY">MULTIDAY</option>
-                </select>
-            </div>
 
             <div class="form-group">
                 <label class="form-label">CAPITALE (€)</label>
@@ -283,18 +264,13 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" id="masterCandleLabel">MINIMO CANDELA MASTER</label>
-                <input type="number" id="masterCandle" class="form-input" value="211.80" step="0.00001">
-            </div>
-
-            <div class="form-group" id="trendlineGroup" style="display:none;">
-                <label class="form-label" id="trendlineLabel">VALORE TRENDLINE MASTER</label>
-                <input type="number" id="trendline" class="form-input" value="" step="0.00001" placeholder="Es: 211.70">
+                <label class="form-label">PREZZO STOP LOSS</label>
+                <input type="number" id="stopLossPrice" class="form-input" value="" step="0.00001" placeholder="Es: 211.80">
             </div>
 
             <div class="form-group">
                 <label class="form-label">PIPS STOP LOSS</label>
-                <input type="number" id="stopLossPips" class="form-input" value="" step="0.1" placeholder="Auto-calcolo">
+                <input type="number" id="stopLossPips" class="form-input" value="" step="0.1" placeholder="Auto-calcolo da prezzo SL">
             </div>
 
             <div class="form-group">
@@ -312,7 +288,7 @@
             <h2>RISULTATI</h2>
             
             <div class="result-row highlight-result" id="stopLossSuggestedRow" style="display:none;">
-                <span class="result-label">STOP LOSS SUGGERITO:</span>
+                <span class="result-label">STOP LOSS (PREZZO):</span>
                 <span class="result-value" id="stopLossSuggested">-</span>
             </div>
             
@@ -382,8 +358,8 @@
 
         <div class="note">
             <strong>Nota:</strong> I valori dei pip sono approssimativi e basati su tassi di cambio medi. 
-            <br><strong>BREAK IN:</strong> Lo stop loss suggerito è il valore minimo/massimo tra candela master e trendline.
-            <br><strong>BREAK OUT:</strong> Lo stop loss è calcolato come il valore tra (Entry - ATR × moltiplicatore) e il minimo/massimo candela master.
+            <br><strong>PREZZO STOP LOSS:</strong> Inserisci il prezzo esatto dello stop loss per il calcolo automatico di pips, lotti e R:R.
+            <br><strong>PIPS STOP LOSS:</strong> Se non inserisci il prezzo SL, puoi inserire i pips manualmente.
             <br><strong>CON DUE TARGET:</strong> Il profitto è calcolato chiudendo metà posizione (50% lotti) a T1 e l'altra metà a T2.
         </div>
     </div>
@@ -403,129 +379,68 @@
         }
 
         function updateUI() {
-            const positionType = document.getElementById('positionType').value;
-            const position = document.getElementById('position').value;
-            
-            // Mostra/nascondi campi basati su tipo posizione
-            if (positionType === 'BREAKOUT') {
-                document.getElementById('atrGroup').style.display = 'block';
-                document.getElementById('timeframeGroup').style.display = 'block';
-                document.getElementById('trendlineGroup').style.display = 'none';
-            } else {
-                // BREAK IN
-                document.getElementById('atrGroup').style.display = 'none';
-                document.getElementById('timeframeGroup').style.display = 'none';
-                document.getElementById('trendlineGroup').style.display = 'block';
-            }
-            
-            // Cambia label candela master e trendline
-            const candleLabel = document.getElementById('masterCandleLabel');
-            const trendlineLabel = document.getElementById('trendlineLabel');
-            
-            if (position === 'LONG') {
-                candleLabel.textContent = 'MINIMO CANDELA MASTER';
-                trendlineLabel.textContent = 'VALORE TRENDLINE MASTER (minimo)';
-            } else {
-                candleLabel.textContent = 'MASSIMO CANDELA MASTER';
-                trendlineLabel.textContent = 'VALORE TRENDLINE MASTER (massimo)';
-            }
+            // No dynamic UI changes needed - simple layout
         }
 
         function calculate() {
             const pair = document.getElementById('pair').value;
             const position = document.getElementById('position').value;
-            const positionType = document.getElementById('positionType').value;
             const capital = parseFloat(document.getElementById('capital').value);
             const leverage = parseFloat(document.getElementById('leverage').value);
             const risk = parseFloat(document.getElementById('risk').value);
             const entry = parseFloat(document.getElementById('entry').value);
-            const masterCandle = parseFloat(document.getElementById('masterCandle').value);
-            const trendline = parseFloat(document.getElementById('trendline').value);
-            const atr = parseFloat(document.getElementById('atr').value);
-            const timeframe = document.getElementById('timeframe').value;
+            const stopLossPriceInput = parseFloat(document.getElementById('stopLossPrice').value);
             const stopLossPipsInput = parseFloat(document.getElementById('stopLossPips').value);
             const target1 = parseFloat(document.getElementById('target1').value);
             const target2 = parseFloat(document.getElementById('target2').value);
 
-            if (!capital || !risk || !entry || !masterCandle) {
+            if (!capital || !risk || !entry) {
                 return;
             }
 
+            // Calcolo stop pips: priorità a prezzo SL, poi pips manuali
+            let stopPips;
             let stopLossPrice;
-            let validationError = false;
-            
-            // Calcolo dello stop loss in base al tipo di posizione
-            if (positionType === 'BREAKOUT' && atr) {
-                // BREAK OUT
-                const atrMultiplier = timeframe === 'INTRADAY' ? 1.5 : 1.0;
-                
-                let atrStop;
-                if (position === 'LONG') {
-                    atrStop = entry - (atr * atrMultiplier);
-                    stopLossPrice = Math.max(atrStop, masterCandle);
-                    
-                    // Validazione BREAK OUT LONG: entry e target devono essere > stop loss
-                    if (entry <= stopLossPrice || (target1 && target1 <= stopLossPrice) || (target2 && target2 <= stopLossPrice)) {
-                        validationError = true;
-                    }
+
+            if (stopLossPriceInput) {
+                stopLossPrice = stopLossPriceInput;
+                if (pair.endsWith('JPY')) {
+                    stopPips = Math.abs(entry - stopLossPrice) * 100;
                 } else {
-                    atrStop = entry + (atr * atrMultiplier);
-                    stopLossPrice = Math.min(atrStop, masterCandle);
-                    
-                    // Validazione BREAK OUT SHORT: entry e target devono essere < stop loss
-                    if (entry >= stopLossPrice || (target1 && target1 >= stopLossPrice) || (target2 && target2 >= stopLossPrice)) {
-                        validationError = true;
-                    }
+                    stopPips = Math.abs(entry - stopLossPrice) * 10000;
                 }
-                
                 document.getElementById('stopLossSuggestedRow').style.display = 'flex';
                 document.getElementById('stopLossSuggested').textContent = stopLossPrice.toFixed(5);
-            } else if (positionType === 'BREAKIN') {
-                // BREAK IN
-                if (trendline) {
-                    // Con trendline: usa il valore minimo/massimo tra candela master e trendline
-                    if (position === 'LONG') {
-                        stopLossPrice = Math.min(masterCandle, trendline);
-                        
-                        // Validazione BREAK IN LONG: entry e target devono essere > stop loss suggerito
-                        if (entry <= stopLossPrice || (target1 && target1 <= stopLossPrice) || (target2 && target2 <= stopLossPrice)) {
-                            validationError = true;
-                        }
-                    } else {
-                        stopLossPrice = Math.max(masterCandle, trendline);
-                        
-                        // Validazione BREAK IN SHORT: entry e target devono essere < stop loss suggerito
-                        if (entry >= stopLossPrice || (target1 && target1 >= stopLossPrice) || (target2 && target2 >= stopLossPrice)) {
-                            validationError = true;
-                        }
-                    }
+            } else if (stopLossPipsInput) {
+                stopPips = stopLossPipsInput;
+                if (pair.endsWith('JPY')) {
+                    stopLossPrice = position === 'LONG' ? entry - stopPips / 100 : entry + stopPips / 100;
                 } else {
-                    // Senza trendline: usa solo la candela master
-                    stopLossPrice = masterCandle;
-                    
-                    if (position === 'LONG') {
-                        if (entry <= stopLossPrice || (target1 && target1 <= stopLossPrice) || (target2 && target2 <= stopLossPrice)) {
-                            validationError = true;
-                        }
-                    } else {
-                        if (entry >= stopLossPrice || (target1 && target1 >= stopLossPrice) || (target2 && target2 >= stopLossPrice)) {
-                            validationError = true;
-                        }
-                    }
+                    stopLossPrice = position === 'LONG' ? entry - stopPips / 10000 : entry + stopPips / 10000;
                 }
-                
                 document.getElementById('stopLossSuggestedRow').style.display = 'flex';
                 document.getElementById('stopLossSuggested').textContent = stopLossPrice.toFixed(5);
             } else {
-                // Fallback: usa candela master
-                stopLossPrice = masterCandle;
                 document.getElementById('stopLossSuggestedRow').style.display = 'none';
+                document.getElementById('stopPips').textContent = '-';
+                return;
             }
 
-            // Mostra/nascondi banner di errore
+            if (!stopPips || stopPips <= 0) {
+                document.getElementById('errorBanner').style.display = 'block';
+                return;
+            }
+
+            // Validazione direzione
+            let validationError = false;
+            if (position === 'LONG') {
+                if (stopLossPrice >= entry || (target1 && target1 <= entry)) validationError = true;
+            } else {
+                if (stopLossPrice <= entry || (target1 && target1 >= entry)) validationError = true;
+            }
+
             if (validationError) {
                 document.getElementById('errorBanner').style.display = 'block';
-                // Nascondi i risultati se c'è un errore
                 document.getElementById('results').style.opacity = '0.5';
                 return;
             } else {
@@ -534,17 +449,6 @@
             }
 
             const riskAmount = (capital * risk) / 100;
-            
-            let stopPips;
-            if (stopLossPipsInput) {
-                stopPips = stopLossPipsInput;
-            } else {
-                if (pair.endsWith('JPY')) {
-                    stopPips = Math.abs(entry - stopLossPrice) * 100;
-                } else {
-                    stopPips = Math.abs(entry - stopLossPrice) * 10000;
-                }
-            }
 
             const pipValue = getPipValue(pair);
             const lots = riskAmount / (stopPips * pipValue);
@@ -643,15 +547,11 @@
         function downloadExcel() {
             const pair = document.getElementById('pair').value;
             const position = document.getElementById('position').value;
-            const positionType = document.getElementById('positionType').value;
             const capital = document.getElementById('capital').value;
             const leverage = document.getElementById('leverage').value;
             const risk = document.getElementById('risk').value;
             const entry = document.getElementById('entry').value;
-            const masterCandle = document.getElementById('masterCandle').value;
-            const trendline = document.getElementById('trendline').value;
-            const atr = document.getElementById('atr').value;
-            const timeframe = document.getElementById('timeframe').value;
+            const stopLossPrice = document.getElementById('stopLossPrice').value;
             const stopLossPips = document.getElementById('stopLossPips').value;
             const target1 = document.getElementById('target1').value;
             const target2 = document.getElementById('target2').value;
@@ -662,21 +562,17 @@
                 ['DATI INPUT', '', ''],
                 ['Coppia Forex', pair, ''],
                 ['Posizione', position, ''],
-                ['Tipo Posizione', positionType, ''],
-                ['ATR (20)', atr, ''],
-                ['Arco Temporale', timeframe, ''],
                 ['Capitale (€)', capital, ''],
                 ['Leva', '1:' + leverage, ''],
                 ['Rischio (%)', risk, ''],
                 ['Prezzo Ingresso', entry, ''],
-                ['Min/Max Candela Master', masterCandle, ''],
-                ['Valore Trendline Master', trendline, ''],
-                ['Pips Stop Loss', stopLossPips, ''],
+                ['Prezzo Stop Loss', stopLossPrice, ''],
+                ['Pips Stop Loss (manuale)', stopLossPips, ''],
                 ['Target 1', target1, ''],
                 ['Target 2', target2, ''],
                 ['', '', ''],
                 ['RISULTATI', '', ''],
-                ['Stop Loss Suggerito', document.getElementById('stopLossSuggested').textContent, ''],
+                ['Stop Loss (prezzo)', document.getElementById('stopLossSuggested').textContent, ''],
                 ['Lotti da Tradare', document.getElementById('lotsResult').textContent, ''],
                 ['Margine Richiesto', document.getElementById('marginRequired').textContent, ''],
                 ['Importo a Rischio', document.getElementById('riskAmount').textContent, ''],
@@ -702,11 +598,6 @@
             a.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
-        document.getElementById('positionType').addEventListener('change', function() {
-            updateUI();
-            calculate();
-        });
 
         document.getElementById('position').addEventListener('change', function() {
             updateUI();
